@@ -28,7 +28,9 @@ module Network.Socket.Options (
   , setSockOpt
   , SockOptValue (..)
   , setSockOptValue
+#ifdef SO_LINGER
   , StructLinger (..)
+#endif
   , SocketTimeout (..)
   ) where
 
@@ -404,12 +406,17 @@ setSockOpt :: Storable a
            -> SocketOption
            -> a
            -> IO ()
+#ifdef HAVE_SETSOCKOPT
 setSockOpt s (SockOpt level opt) v = do
     with v $ \ptr -> void $ do
         let sz = fromIntegral $ sizeOf v
         withFdSocket s $ \fd ->
           throwSocketErrorIfMinus1_ "Network.Socket.setSockOpt" $
           c_setsockopt fd level opt ptr sz
+#else
+setSockOpt _ _ _  = unsupported "setSockOpt"
+{-# WARNING setSockOpt "operation will throw 'IOError' \"unsupported operation\"" #-}
+#endif
 
 -- | Set a socket option value
 --
@@ -540,5 +547,7 @@ instance Storable SocketTimeout where
 
 foreign import CALLCONV unsafe "getsockopt"
   c_getsockopt :: CInt -> CInt -> CInt -> Ptr a -> Ptr CInt -> IO CInt
+#ifdef HAVE_SETSOCKOPT
 foreign import CALLCONV unsafe "setsockopt"
   c_setsockopt :: CInt -> CInt -> CInt -> Ptr a -> CInt -> IO CInt
+#endif

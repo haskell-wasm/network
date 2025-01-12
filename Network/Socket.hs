@@ -176,7 +176,9 @@ module Network.Socket (
     setSocketOption,
 
     -- ** General socket options
+#ifdef SO_LINGER
     StructLinger (..),
+#endif
     SocketTimeout (..),
     getSockOpt,
     setSockOpt,
